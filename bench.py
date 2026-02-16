@@ -1,9 +1,20 @@
 import argparse
 import sys
 import time
+import re
 
 import requests
 from requests.exceptions import RequestException
+
+
+def validate_host(host):
+    pattern = r'https://[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z0-9]{2,}'
+    match = re.fullmatch(pattern, host)
+    return bool(match)
+
+
+def validate_count(count):
+    return isinstance(count, int)
 
 
 def parse_args():
@@ -20,7 +31,6 @@ def parse_args():
     )
     parser.add_argument(
         "-C", "--count",
-        type=int,
         default=1,
         help="Количество запросов на каждый хост (по умолчанию 1)"
     )
@@ -29,6 +39,13 @@ def parse_args():
     hosts = [h.strip() for h in args.hosts.split(",") if h.strip()]
     if not hosts:
         parser.error("Список хостов не может быть пустым.")
+
+    for host in hosts:
+        if not validate_host(host):
+            parser.error(f"Недопустимое имя хоста: {host}")
+
+    if not validate_count(args.count):
+        parser.error("Количество запросов должно быть целочисленным")
 
     if args.count <= 0:
         parser.error("Количество запросов должно быть положительным числом.")
